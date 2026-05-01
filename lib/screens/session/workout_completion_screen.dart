@@ -27,12 +27,9 @@ class WorkoutCompletionScreen extends ConsumerWidget {
         exercise.id: ref.watch(allTimeBest1RMProvider(exercise.id)),
     };
 
-    // 全体サマリー（完了マーク有りの場合は完了分のみカウント）
+    // 全体サマリー（完了チェックしたセットのみカウント）
     final totalSets = sessionState.setRecords.values.fold(0, (sum, records) {
-      final effective = records.any((r) => r.completed)
-          ? records.where((r) => r.completed).length
-          : records.length;
-      return sum + effective;
+      return sum + records.where((r) => r.completed).length;
     });
 
     return Scaffold(
@@ -53,13 +50,16 @@ class WorkoutCompletionScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               children: [
                 ...sessionState.exercises
-                  .where((exercise) =>
-                      (sessionState.setRecords[exercise.id] ?? []).isNotEmpty)
+                  .where((exercise) {
+                    final records = sessionState.setRecords[exercise.id] ?? [];
+                    if (records.isEmpty) return false;
+                    // 完了チェックのないセットのみの種目は表示しない
+                    if (!records.any((r) => r.completed)) return false;
+                    return true;
+                  })
                   .map((exercise) {
                   final allResults = sessionState.setRecords[exercise.id] ?? [];
-                  final current = allResults.any((r) => r.completed)
-                      ? allResults.where((r) => r.completed).toList()
-                      : allResults;
+                  final current = allResults.where((r) => r.completed).toList();
                   final previousAsync = previousRecordsMap[exercise.id];
                   final previous = previousAsync?.when(
                         data: (r) => r,
@@ -214,9 +214,8 @@ class WorkoutCompletionScreen extends ConsumerWidget {
 
       final setRecords = <SetRecord>[];
       sessionState.setRecords.forEach((exerciseId, results) {
-        final toSave = results.any((r) => r.completed)
-            ? results.where((r) => r.completed).toList()
-            : results;
+        // 完了チェックしたセットのみ保存
+        final toSave = results.where((r) => r.completed).toList();
         for (final result in toSave) {
           setRecords.add(SetRecord(
             id: '${sessionState.session.id}_${exerciseId}_${result.setIndex}',
