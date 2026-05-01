@@ -67,7 +67,7 @@ final selectedDaySessionsProvider =
 // 直近N件のセッション
 final recentSessionsProvider = FutureProvider<List<WorkoutSession>>((ref) {
   final repo = ref.watch(workoutSessionRepositoryProvider);
-  return repo.getRecent(10);
+  return repo.getRecent(3);
 });
 
 // セッション詳細（SetRecord + Exercise 名）

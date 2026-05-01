@@ -287,6 +287,18 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   void _handleBack() {
+    // 現在の種目の状態を保存してから戻る
+    final currentExercise = _sessionState.currentExercise;
+    final currentResults = List.generate(repsValues.length, (i) {
+      return SetResult(
+        setIndex: i,
+        reps: repsValues[i],
+        weight: double.tryParse(weightControllers[i].text),
+        completed: completedValues[i],
+      );
+    });
+    _sessionState = _sessionState.saveSetRecords(currentExercise.id, currentResults);
+
     final prevIndex = _sessionState.currentExerciseIndex - 1;
     final prevExercise = _sessionState.exercises[prevIndex];
     final prevPatternExercise = _sessionState.pattern.exercises[prevIndex];
@@ -302,7 +314,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         completedValues = savedResults.map((r) => r.completed).toList();
         weightControllers = savedResults
             .map((r) => TextEditingController(
-                text: r.weight != null ? '${r.weight}' : ''))
+                text: r.weight != null ? _formatWeight(r.weight!) : ''))
             .toList();
       } else {
         // 未入力だった場合はデフォルト値
@@ -333,11 +345,31 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         currentExerciseIndex: _sessionState.currentExerciseIndex + 1,
       );
       _disposeControllers();
+      await _restoreOrInitialize(nextState);
+      _scrollToTop();
+    }
+  }
+
+  /// 次の種目に進む際、保存済み状態があれば復元し、なければFirestoreから初期化する
+  Future<void> _restoreOrInitialize(SessionState nextState) async {
+    final nextExercise = nextState.exercises[nextState.currentExerciseIndex];
+    final savedResults = nextState.setRecords[nextExercise.id];
+
+    if (savedResults != null && savedResults.isNotEmpty) {
+      setState(() {
+        _sessionState = nextState;
+        repsValues = savedResults.map((r) => r.reps).toList();
+        completedValues = savedResults.map((r) => r.completed).toList();
+        weightControllers = savedResults
+            .map((r) => TextEditingController(
+                text: r.weight != null ? _formatWeight(r.weight!) : ''))
+            .toList();
+      });
+    } else {
       await _initializeInputs(nextState);
       setState(() {
         _sessionState = nextState;
       });
-      _scrollToTop();
     }
   }
 
@@ -369,10 +401,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         currentExerciseIndex: _sessionState.currentExerciseIndex + 1,
       );
       _disposeControllers();
-      await _initializeInputs(nextState);
-      setState(() {
-        _sessionState = nextState;
-      });
+      await _restoreOrInitialize(nextState);
       _scrollToTop();
     }
   }
