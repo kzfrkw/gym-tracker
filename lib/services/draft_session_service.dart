@@ -10,11 +10,13 @@ class SessionDraft {
   final SessionState sessionState;
   final List<int> repsValues;
   final List<String> weightTexts;
+  final List<bool> completedValues;
 
   const SessionDraft({
     required this.sessionState,
     required this.repsValues,
     required this.weightTexts,
+    required this.completedValues,
   });
 }
 
@@ -25,6 +27,7 @@ class DraftSessionService {
     required SessionState state,
     required List<int> repsValues,
     required List<String> weightTexts,
+    required List<bool> completedValues,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final data = {
@@ -55,12 +58,14 @@ class DraftSessionService {
                     'setIndex': r.setIndex,
                     'reps': r.reps,
                     'weight': r.weight,
+                    'completed': r.completed,
                   })
               .toList(),
         ),
       ),
       'currentReps': repsValues,
       'currentWeights': weightTexts,
+      'currentCompleted': completedValues,
     };
     await prefs.setString(_key, jsonEncode(data));
   }
@@ -106,6 +111,7 @@ class DraftSessionService {
                     setIndex: r['setIndex'] as int,
                     reps: r['reps'] as int,
                     weight: (r['weight'] as num?)?.toDouble(),
+                    completed: r['completed'] as bool? ?? false,
                   ))
               .toList(),
         ),
@@ -123,11 +129,16 @@ class DraftSessionService {
           (data['currentReps'] as List).map((e) => e as int).toList();
       final weightTexts =
           (data['currentWeights'] as List).map((e) => e as String).toList();
+      final completedValues =
+          (data['currentCompleted'] as List? ?? List.filled(repsValues.length, false))
+              .map((e) => e as bool)
+              .toList();
 
       return SessionDraft(
         sessionState: sessionState,
         repsValues: repsValues,
         weightTexts: weightTexts,
+        completedValues: completedValues,
       );
     } catch (_) {
       await clear();

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/exercise.dart';
 import '../../providers/exercise_progress_provider.dart';
 import '../../providers/set_record_providers.dart';
+import '../../utils/chart_utils.dart';
 
 class ExerciseProgressScreen extends ConsumerWidget {
   final Exercise exercise;
@@ -150,7 +151,7 @@ class _ChartCard extends StatelessWidget {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: _niceInterval(maxY - minY),
+                  horizontalInterval: niceYInterval(maxY - minY),
                   getDrawingHorizontalLine: (_) => FlLine(
                     color: Colors.grey.shade200,
                     strokeWidth: 1,
@@ -173,7 +174,7 @@ class _ChartCard extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
-                      interval: _bottomInterval(entries.length),
+                      interval: bottomXInterval(entries.length),
                       getTitlesWidget: (value, _) {
                         final idx = value.toInt();
                         if (idx < 0 || idx >= entries.length) {
@@ -227,18 +228,6 @@ class _ChartCard extends StatelessWidget {
     );
   }
 
-  double _niceInterval(double range) {
-    if (range <= 0) return 5;
-    if (range <= 10) return 2.5;
-    if (range <= 30) return 5;
-    return 10;
-  }
-
-  double _bottomInterval(int count) {
-    if (count <= 6) return 1;
-    if (count <= 12) return 2;
-    return (count / 6).ceilToDouble();
-  }
 }
 
 class _HistoryList extends StatelessWidget {

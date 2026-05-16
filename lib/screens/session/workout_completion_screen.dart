@@ -5,6 +5,8 @@ import '../../models/set_record.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/set_record_providers.dart';
 import '../../providers/repository_providers.dart';
+import '../../services/draft_session_service.dart';
+import '../../utils/one_rm_calculator.dart';
 
 class WorkoutCompletionScreen extends ConsumerWidget {
   final SessionState sessionState;
@@ -193,6 +195,7 @@ class WorkoutCompletionScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               await _saveSessionToFirestore(context, ref);
+              await DraftSessionService.clear();
               if (context.mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);
               }
@@ -277,17 +280,6 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-double _epley(double weight, int reps) {
-  if (reps <= 0) return weight;
-  return weight * (1 + reps / 30);
-}
-
-double? _best1RM(Iterable<({double? weight, int reps})> sets) {
-  return sets
-      .where((s) => s.weight != null && s.weight! > 0 && s.reps > 0)
-      .map((s) => _epley(s.weight!, s.reps))
-      .fold<double?>(null, (best, v) => best == null || v > best ? v : best);
-}
 
 class _ExerciseCard extends StatelessWidget {
   final Exercise exercise;
@@ -306,7 +298,7 @@ class _ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final current1RM = exercise.isBodyweight
         ? null
-        : _best1RM(current.map((r) => (weight: r.weight, reps: r.reps)));
+        : best1RM(current.map((r) => (weight: r.weight, reps: r.reps)));
     final isPR = current1RM != null &&
         (allTimeBest1RM == null || current1RM > allTimeBest1RM!);
 
