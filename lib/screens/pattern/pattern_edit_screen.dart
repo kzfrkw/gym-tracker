@@ -7,7 +7,7 @@ import '../../models/workout_pattern.dart';
 import '../../providers/exercise_providers.dart';
 import '../../providers/repository_providers.dart';
 import 'widgets/exercise_entry.dart';
-import 'widgets/exercise_picker_sheet.dart';
+import '../../widgets/exercise_picker_sheet.dart';
 import 'widgets/exercise_tile.dart';
 import 'widgets/set_editor_sheet.dart';
 

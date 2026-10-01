@@ -57,6 +57,19 @@ class SessionState {
     final updatedRecords = {...setRecords, exerciseId: records};
     return copyWith(setRecords: updatedRecords);
   }
+
+  /// 指定位置の種目を今日のセッションだけ差し替える（パターンは変更しない）
+  /// 目標セットは pattern.exercises[index] を引き継ぎ、差し替え前の記録は破棄する
+  SessionState replaceExercise(int index, Exercise newExercise) {
+    final oldId = exercises[index].id;
+    return SessionState(
+      session: session,
+      pattern: pattern,
+      exercises: [...exercises]..[index] = newExercise,
+      currentExerciseIndex: currentExerciseIndex,
+      setRecords: {...setRecords}..remove(oldId),
+    );
+  }
 }
 
 Future<SessionState> initializeSession(

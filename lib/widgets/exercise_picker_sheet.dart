@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import '../../../models/exercise.dart';
-import '../../../providers/exercise_providers.dart';
-import '../../../providers/repository_providers.dart';
+import '../models/exercise.dart';
+import '../providers/exercise_providers.dart';
+import '../providers/repository_providers.dart';
 
 class ExercisePickerSheet extends ConsumerStatefulWidget {
   final Set<String> alreadyAdded;

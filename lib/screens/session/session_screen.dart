@@ -6,6 +6,9 @@ import '../../providers/set_record_providers.dart';
 import '../../models/set_record.dart';
 import '../../providers/repository_providers.dart';
 import '../../services/draft_session_service.dart';
+import '../../models/exercise.dart';
+import '../../widgets/exercise_picker_sheet.dart';
+import 'widgets/exercise_header.dart';
 import 'widgets/set_card.dart';
 import 'workout_completion_screen.dart';
 
@@ -174,26 +177,11 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     return Column(
       children: [
-        // 種目ヘッダー
-        Container(
-          color: Colors.white,
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                currentExercise.name,
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${_sessionState.currentExerciseIndex + 1} / ${_sessionState.exercises.length}種目',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ],
-          ),
+        ExerciseHeader(
+          exerciseName: currentExercise.name,
+          position: _sessionState.currentExerciseIndex + 1,
+          total: _sessionState.exercises.length,
+          onChangePressed: _handleChangeExercise,
         ),
         const SizedBox(height: 8),
         // セットリスト
@@ -305,6 +293,57 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         ),
       ],
     );
+  }
+
+  /// 今日のセッションだけ、現在の種目を別の種目に差し替える
+  Future<void> _handleChangeExercise() async {
+    if (completedValues.any((c) => c)) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('種目を変更しますか？'),
+          content: const Text('この種目で完了チェックしたセットの記録は破棄されます。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('変更する'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+    }
+
+    final selected = await showModalBottomSheet<Exercise>(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ExercisePickerSheet(
+        alreadyAdded: _sessionState.exercises.map((e) => e.id).toSet(),
+        onSelected: (exercise) => Navigator.of(context).pop(exercise),
+      ),
+    );
+    if (selected == null || !mounted) return;
+
+    final nextState = _sessionState.replaceExercise(
+        _sessionState.currentExerciseIndex, selected);
+    final oldControllers = weightControllers;
+    await _initializeInputs(nextState);
+    if (!mounted) return;
+    setState(() => _sessionState = nextState);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final c in oldControllers) {
+        c.dispose();
+      }
+    });
+    _scrollToTop();
   }
 
   void _handleBack() {

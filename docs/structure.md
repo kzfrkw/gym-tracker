@@ -77,6 +77,22 @@ SetRecord
   - completed: bool
 ```
 
+### セッション中の状態（SessionState、永続化はドラフトのみ）
+
+```
+SessionState
+  - session: WorkoutSession
+  - pattern: WorkoutPattern           // 開始時のパターン（セッション中は変更しない）
+  - exercises: List<Exercise>         // 今日実施する種目。pattern.exercises とインデックスで対応
+  - currentExerciseIndex: int
+  - setRecords: Map<exerciseId, List<SetResult>>
+```
+
+- 種目差し替え（scope #17）は `exercises[i]` のみを置き換え、`pattern` は触らない
+  → 目標セットは `pattern.exercises[i].targetSets` を引き継ぐ
+  → 差し替え前の種目の `setRecords` は削除する（完了画面・Firestore 保存の対象から外す）
+- `setRecords` が exerciseId キーのため、同一セッション内で同じ種目は1回まで（差し替え候補から除外）
+
 ### 設計の意図
 
 - `SetRecord` は `patternId` でなく `exerciseId` に直接紐づく
